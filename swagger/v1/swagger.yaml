@@ -16,6 +16,10 @@ components:
       properties:
         data:
           "$ref": "#/components/schemas/TaskResource"
+        included:
+          type: array
+          items:
+            "$ref": "#/components/schemas/TagResource"
       required:
       - data
     TaskCollection:
@@ -25,6 +29,10 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/TaskResource"
+        included:
+          type: array
+          items:
+            "$ref": "#/components/schemas/TagResource"
         meta:
           "$ref": "#/components/schemas/PaginationMeta"
       required:
@@ -64,6 +72,26 @@ components:
           - description
           - status
           - scheduled_at
+        relationships:
+          type: object
+          properties:
+            tags:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      type:
+                        type: string
+                        enum:
+                        - tag
+                    required:
+                    - id
+                    - type
       required:
       - id
       - type
@@ -94,6 +122,73 @@ components:
           - description
       required:
       - task
+    Tag:
+      type: object
+      properties:
+        data:
+          "$ref": "#/components/schemas/TagResource"
+      required:
+      - data
+    TagCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            "$ref": "#/components/schemas/TagResource"
+        meta:
+          "$ref": "#/components/schemas/PaginationMeta"
+      required:
+      - data
+      - meta
+    TagResource:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        type:
+          type: string
+          enum:
+          - tag
+        attributes:
+          type: object
+          properties:
+            title:
+              type: string
+              example: звонок
+            system:
+              type: boolean
+              example: true
+          required:
+          - title
+          - system
+      required:
+      - id
+      - type
+      - attributes
+    TagInput:
+      type: object
+      properties:
+        tag:
+          type: object
+          properties:
+            title:
+              type: string
+              example: критично
+              maxLength: 32
+          required:
+          - title
+      required:
+      - tag
+    AttachTagInput:
+      type: object
+      properties:
+        tag_id:
+          type: integer
+          example: 1
+      required:
+      - tag_id
     PaginationMeta:
       type: object
       properties:
@@ -144,6 +239,191 @@ components:
       required:
       - errors
 paths:
+  "/api/v1/tags":
+    get:
+      summary: list tags
+      tags:
+      - Tags
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+        required: false
+        description: Page number
+      - name: per_page
+        in: query
+        schema:
+          type: integer
+        required: false
+        description: Items per page (max 100)
+      responses:
+        '200':
+          description: list of tags
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/TagCollection"
+    post:
+      summary: create tag
+      tags:
+      - Tags
+      parameters: []
+      responses:
+        '201':
+          description: tag created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Tag"
+        '400':
+          description: parameter missing
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '422':
+          description: validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/TagInput"
+  "/api/v1/tags/{id}":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: Tag ID
+      schema:
+        type: integer
+    get:
+      summary: show tag
+      tags:
+      - Tags
+      responses:
+        '200':
+          description: tag found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Tag"
+        '404':
+          description: tag not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+    patch:
+      summary: update tag
+      tags:
+      - Tags
+      parameters: []
+      responses:
+        '200':
+          description: tag updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Tag"
+        '400':
+          description: parameter missing
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '404':
+          description: tag not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '422':
+          description: system tag protected
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/TagInput"
+    delete:
+      summary: destroy tag
+      tags:
+      - Tags
+      responses:
+        '204':
+          description: tag destroyed
+        '404':
+          description: tag not found
+        '422':
+          description: system tag protected
+  "/api/v1/tasks/{task_id}/tags":
+    parameters:
+    - name: task_id
+      in: path
+      required: true
+      description: Task ID
+      schema:
+        type: integer
+    post:
+      summary: attach tag to task
+      tags:
+      - TaskTags
+      parameters: []
+      responses:
+        '200':
+          description: tag attached (idempotent)
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Task"
+        '400':
+          description: parameter missing
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '404':
+          description: task or tag not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/AttachTagInput"
+  "/api/v1/tasks/{task_id}/tags/{id}":
+    parameters:
+    - name: task_id
+      in: path
+      required: true
+      description: Task ID
+      schema:
+        type: integer
+    - name: id
+      in: path
+      required: true
+      description: Tag ID
+      schema:
+        type: integer
+    delete:
+      summary: detach tag from task
+      tags:
+      - TaskTags
+      responses:
+        '204':
+          description: tag detached
+        '404':
+          description: task not found or tag not attached
   "/api/v1/tasks":
     get:
       summary: list tasks
