@@ -1,6 +1,9 @@
 class Task < ApplicationRecord
   enum :status, { pending: 0, done: 1, cancelled: 2 }, validate: true
 
+  has_many :task_tags, dependent: :destroy
+  has_many :tags, through: :task_tags
+
   validates :title, presence: true, length: { maximum: 255 }
   validates :description, presence: true, length: { maximum: 5000 }
 

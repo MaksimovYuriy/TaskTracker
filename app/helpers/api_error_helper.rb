@@ -9,6 +9,8 @@ module ApiErrorHelper
       single_error(status: :not_found,   code: "not_found",   detail: exception.message)
     when ActionController::ParameterMissing
       single_error(status: :bad_request, code: "bad_request", detail: exception.message)
+    when Tag::SystemTagProtected
+      single_error(status: :unprocessable_entity, code: "system_tag_protected", detail: exception.message)
     end
   end
 

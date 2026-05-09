@@ -6,7 +6,8 @@ module Api
 
       rescue_from ActiveRecord::RecordNotFound,
                   ActiveRecord::RecordInvalid,
-                  ActionController::ParameterMissing do |exception|
+                  ActionController::ParameterMissing,
+                  Tag::SystemTagProtected do |exception|
         render(**error_response_for(exception))
       end
     end

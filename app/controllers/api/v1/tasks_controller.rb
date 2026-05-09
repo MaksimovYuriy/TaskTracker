@@ -4,26 +4,26 @@ module Api
       before_action :set_task, only: %i[show update destroy]
 
       def index
-        scope = Task.ransack(params[:q]).result.order(scheduled_at: :asc, id: :asc)
+        scope = Task.ransack(params[:q]).result.includes(:tags).order(scheduled_at: :asc, id: :asc)
         pagy_obj, tasks = pagy(scope)
 
-        render json: TaskSerializer.new(tasks).serializable_hash.merge(
+        render json: TaskSerializer.new(tasks, include: [:tags]).serializable_hash.merge(
           meta: pagination_meta(pagy_obj)
         )
       end
 
       def show
-        render json: TaskSerializer.new(@task).serializable_hash
+        render json: TaskSerializer.new(@task, include: [:tags]).serializable_hash
       end
 
       def create
         task = Task.create!(task_params)
-        render json: TaskSerializer.new(task).serializable_hash, status: :created
+        render json: TaskSerializer.new(task, include: [:tags]).serializable_hash, status: :created
       end
 
       def update
         @task.update!(task_params)
-        render json: TaskSerializer.new(@task).serializable_hash
+        render json: TaskSerializer.new(@task, include: [:tags]).serializable_hash
       end
 
       def destroy

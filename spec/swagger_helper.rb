@@ -26,7 +26,11 @@ RSpec.configure do |config|
           Task: {
             type: :object,
             properties: {
-              data: { '$ref' => '#/components/schemas/TaskResource' }
+              data: { '$ref' => '#/components/schemas/TaskResource' },
+              included: {
+                type: :array,
+                items: { '$ref' => '#/components/schemas/TagResource' }
+              }
             },
             required: %w[data]
           },
@@ -36,6 +40,10 @@ RSpec.configure do |config|
               data: {
                 type: :array,
                 items: { '$ref' => '#/components/schemas/TaskResource' }
+              },
+              included: {
+                type: :array,
+                items: { '$ref' => '#/components/schemas/TagResource' }
               },
               meta: { '$ref' => '#/components/schemas/PaginationMeta' }
             },
@@ -55,6 +63,27 @@ RSpec.configure do |config|
                   scheduled_at: { type: :string, format: 'date-time', nullable: true }
                 },
                 required: %w[title description status scheduled_at]
+              },
+              relationships: {
+                type: :object,
+                properties: {
+                  tags: {
+                    type: :object,
+                    properties: {
+                      data: {
+                        type: :array,
+                        items: {
+                          type: :object,
+                          properties: {
+                            id: { type: :string },
+                            type: { type: :string, enum: ['tag'] }
+                          },
+                          required: %w[id type]
+                        }
+                      }
+                    }
+                  }
+                }
               }
             },
             required: %w[id type attributes]
@@ -74,6 +103,60 @@ RSpec.configure do |config|
               }
             },
             required: %w[task]
+          },
+          Tag: {
+            type: :object,
+            properties: {
+              data: { '$ref' => '#/components/schemas/TagResource' }
+            },
+            required: %w[data]
+          },
+          TagCollection: {
+            type: :object,
+            properties: {
+              data: {
+                type: :array,
+                items: { '$ref' => '#/components/schemas/TagResource' }
+              },
+              meta: { '$ref' => '#/components/schemas/PaginationMeta' }
+            },
+            required: %w[data meta]
+          },
+          TagResource: {
+            type: :object,
+            properties: {
+              id: { type: :string, example: '1' },
+              type: { type: :string, enum: ['tag'] },
+              attributes: {
+                type: :object,
+                properties: {
+                  title: { type: :string, example: 'звонок' },
+                  system: { type: :boolean, example: true }
+                },
+                required: %w[title system]
+              }
+            },
+            required: %w[id type attributes]
+          },
+          TagInput: {
+            type: :object,
+            properties: {
+              tag: {
+                type: :object,
+                properties: {
+                  title: { type: :string, example: 'критично', maxLength: 32 }
+                },
+                required: %w[title]
+              }
+            },
+            required: %w[tag]
+          },
+          AttachTagInput: {
+            type: :object,
+            properties: {
+              tag_id: { type: :integer, example: 1 }
+            },
+            required: %w[tag_id]
           },
           PaginationMeta: {
             type: :object,
