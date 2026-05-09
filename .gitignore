@@ -22,7 +22,7 @@
 !/tmp/pids/
 !/tmp/pids/.keep
 
-# Ignore storage (uploaded files in development and any SQLite databases).
+# Ignore storage (uploaded files in development).
 /storage/*
 !/storage/.keep
 /tmp/storage/*
@@ -31,3 +31,12 @@
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key
+
+# IDE / editor metadata.
+/.idea/
+/.vscode/
+/.claude/
+*.swp
+
+# Coverage reports.
+/coverage/
