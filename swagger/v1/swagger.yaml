@@ -463,6 +463,22 @@ paths:
           type: string
           format: date-time
         required: false
+      - name: q[tags_id_in][]
+        in: query
+        schema:
+          type: array
+          items:
+            type: integer
+        required: false
+        description: Filter by tag ids (OR semantics)
+      - name: q[tags_title_in][]
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+        required: false
+        description: Filter by tag titles (OR semantics)
       responses:
         '200':
           description: list of tasks

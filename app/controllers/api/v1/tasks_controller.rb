@@ -4,7 +4,9 @@ module Api
       before_action :set_task, only: %i[show update destroy]
 
       def index
-        scope = Task.ransack(params[:q]).result.includes(:tags).order(scheduled_at: :asc, id: :asc)
+        scope = Task.ransack(params[:q]).result
+                    .includes(:tags).distinct
+                    .order(scheduled_at: :asc, id: :asc)
         pagy_obj, tasks = pagy(scope)
 
         render json: TaskSerializer.new(tasks, include: [:tags]).serializable_hash.merge(

@@ -20,6 +20,10 @@ class Tag < ApplicationRecord
   scope :system_tags, -> { where(title: SYSTEM_TITLES) }
   scope :user_tags,   -> { where.not(title: SYSTEM_TITLES) }
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[id title]
+  end
+
   def system?
     SYSTEM_TITLES.include?(title)
   end

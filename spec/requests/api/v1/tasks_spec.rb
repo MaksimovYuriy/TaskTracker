@@ -11,6 +11,8 @@ RSpec.describe 'api/v1/tasks', type: :request do
       parameter name: :'q[status_eq]',       in: :query, schema: { type: :string, enum: %w[pending done cancelled] }, required: false
       parameter name: :'q[scheduled_at_gteq]', in: :query, schema: { type: :string, format: 'date-time' }, required: false
       parameter name: :'q[scheduled_at_lteq]', in: :query, schema: { type: :string, format: 'date-time' }, required: false
+      parameter name: :'q[tags_id_in][]',     in: :query, schema: { type: :array, items: { type: :integer } }, required: false, description: 'Filter by tag ids (OR semantics)'
+      parameter name: :'q[tags_title_in][]',  in: :query, schema: { type: :array, items: { type: :string } },  required: false, description: 'Filter by tag titles (OR semantics)'
 
       response(200, 'list of tasks') do
         schema '$ref' => '#/components/schemas/TaskCollection'
