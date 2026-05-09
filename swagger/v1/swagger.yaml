@@ -1,0 +1,290 @@
+---
+openapi: 3.0.1
+info:
+  title: Task Tracker API
+  version: v1
+  description: API трекера задач для МИС
+servers:
+- url: http://{defaultHost}
+  variables:
+    defaultHost:
+      default: localhost:3000
+components:
+  schemas:
+    Task:
+      type: object
+      properties:
+        data:
+          "$ref": "#/components/schemas/TaskResource"
+      required:
+      - data
+    TaskCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            "$ref": "#/components/schemas/TaskResource"
+        meta:
+          "$ref": "#/components/schemas/PaginationMeta"
+      required:
+      - data
+      - meta
+    TaskResource:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        type:
+          type: string
+          enum:
+          - task
+        attributes:
+          type: object
+          properties:
+            title:
+              type: string
+              example: Обход пациентов
+            description:
+              type: string
+              example: Палаты 201–215, проверить капельницы
+            status:
+              type: string
+              enum:
+              - pending
+              - done
+              - cancelled
+            scheduled_at:
+              type: string
+              format: date-time
+              nullable: true
+          required:
+          - title
+          - description
+          - status
+          - scheduled_at
+      required:
+      - id
+      - type
+      - attributes
+    TaskInput:
+      type: object
+      properties:
+        task:
+          type: object
+          properties:
+            title:
+              type: string
+              example: Обход пациентов
+            description:
+              type: string
+              example: Палаты 201–215, проверить капельницы
+            status:
+              type: string
+              enum:
+              - pending
+              - done
+              - cancelled
+            scheduled_at:
+              type: string
+              format: date-time
+          required:
+          - title
+          - description
+      required:
+      - task
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 25
+        total_pages:
+          type: integer
+          example: 4
+        total_count:
+          type: integer
+          example: 87
+      required:
+      - current_page
+      - per_page
+      - total_pages
+      - total_count
+    Error:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              status:
+                type: string
+                example: '422'
+              code:
+                type: string
+                example: validation_error
+              detail:
+                type: string
+                example: Title can't be blank
+              source:
+                type: object
+                properties:
+                  pointer:
+                    type: string
+                    example: "/data/attributes/title"
+            required:
+            - status
+            - code
+            - detail
+      required:
+      - errors
+paths:
+  "/api/v1/tasks":
+    get:
+      summary: list tasks
+      tags:
+      - Tasks
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+        required: false
+        description: Page number
+      - name: per_page
+        in: query
+        schema:
+          type: integer
+        required: false
+        description: Items per page (max 100)
+      - name: q[status_eq]
+        in: query
+        schema:
+          type: string
+          enum:
+          - pending
+          - done
+          - cancelled
+        required: false
+      - name: q[scheduled_at_gteq]
+        in: query
+        schema:
+          type: string
+          format: date-time
+        required: false
+      - name: q[scheduled_at_lteq]
+        in: query
+        schema:
+          type: string
+          format: date-time
+        required: false
+      responses:
+        '200':
+          description: list of tasks
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/TaskCollection"
+    post:
+      summary: create task
+      tags:
+      - Tasks
+      parameters: []
+      responses:
+        '201':
+          description: task created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Task"
+        '400':
+          description: parameter missing
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '422':
+          description: validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/TaskInput"
+  "/api/v1/tasks/{id}":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: Task ID
+      schema:
+        type: integer
+    get:
+      summary: show task
+      tags:
+      - Tasks
+      responses:
+        '200':
+          description: task found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Task"
+        '404':
+          description: task not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+    patch:
+      summary: update task
+      tags:
+      - Tasks
+      parameters: []
+      responses:
+        '200':
+          description: task updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Task"
+        '400':
+          description: parameter missing
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '404':
+          description: task not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '422':
+          description: validation error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/TaskInput"
+    delete:
+      summary: delete task
+      tags:
+      - Tasks
+      responses:
+        '204':
+          description: task deleted
+        '404':
+          description: task not found
