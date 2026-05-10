@@ -1,6 +1,8 @@
 class Task < ApplicationRecord
   enum :status, { pending: 0, done: 1, cancelled: 2 }, validate: true
 
+  belongs_to :task_template, optional: true
+
   has_many :task_tags, dependent: :destroy
   has_many :tags, through: :task_tags
 
