@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "sidekiq/web"
 require "sidekiq/cron/web"
 require "rack/session/cookie"
@@ -8,10 +10,10 @@ Sidekiq::Web.use Rack::Session::Cookie,
                  max_age: 86_400
 
 Rails.application.routes.draw do
-  mount Rswag::Ui::Engine => '/api-docs'
-  mount Rswag::Api::Engine => '/api-docs'
+  mount Rswag::Ui::Engine => "/api-docs"
+  mount Rswag::Api::Engine => "/api-docs"
 
-  mount Sidekiq::Web => '/sidekiq'
+  mount Sidekiq::Web => "/sidekiq"
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -24,7 +26,7 @@ Rails.application.routes.draw do
         member do
           delete :recurrence, action: :cancel_recurrence
         end
-        resources :tags, only: %i[create destroy], controller: 'task_tags'
+        resources :tags, only: %i[create destroy], controller: "task_tags"
       end
       resources :tags, only: %i[index show create update destroy]
     end

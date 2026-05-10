@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module TaskTemplates
   module Recurrence
     class MonthlyStrategy < Strategy
@@ -16,6 +18,7 @@ module TaskTemplates
 
       def candidate_for(month)
         return nil unless Date.valid_date?(month.year, month.month, day_of_month)
+
         combine(Date.new(month.year, month.month, day_of_month))
       end
 

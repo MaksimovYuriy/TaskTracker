@@ -1,9 +1,7 @@
-module Tasks
-  class RecurrenceCanceller
-    def self.call(task_id)
-      new(task_id).call
-    end
+# frozen_string_literal: true
 
+module Tasks
+  class RecurrenceCanceller < ApplicationService
     def initialize(task_id)
       @task_id = task_id
     end

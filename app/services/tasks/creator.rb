@@ -1,10 +1,8 @@
-module Tasks
-  class Creator
-    SINGLE_TASK_ATTRS = %i[title description status scheduled_at].freeze
+# frozen_string_literal: true
 
-    def self.call(params)
-      new(params).call
-    end
+module Tasks
+  class Creator < ApplicationService
+    SINGLE_TASK_ATTRS = %i[title description status scheduled_at user_id].freeze
 
     def initialize(params)
       @params = params

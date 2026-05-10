@@ -1,10 +1,8 @@
+# frozen_string_literal: true
+
 module TaskTemplates
   module Recurrence
-    class Strategy
-      def self.call(template, range:)
-        new(template, range: range).call
-      end
-
+    class Strategy < ApplicationService
       def initialize(template, range:)
         @template = template
         @range = range

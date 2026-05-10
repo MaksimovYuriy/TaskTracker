@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module TaskTemplates
   module Recurrence
     class EvenDaysStrategy < Strategy

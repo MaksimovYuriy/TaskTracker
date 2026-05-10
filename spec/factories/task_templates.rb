@@ -1,11 +1,14 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :task_template do
     sequence(:title) { |n| "Template ##{n} - #{Faker::Lorem.sentence(word_count: 3)}" }
     description      { Faker::Lorem.paragraph(sentence_count: 3) }
     recurrence_type  { :daily }
     interval         { 1 }
-    time_of_day      { "09:00" }
+    time_of_day      { '09:00' }
     active           { true }
+    sequence(:user_id) { |n| n }
 
     trait :monthly do
       recurrence_type { :monthly }
@@ -16,7 +19,7 @@ FactoryBot.define do
     trait :specific_dates do
       recurrence_type { :specific_dates }
       interval        { nil }
-      specific_dates  { [Date.current + 1.day, Date.current + 7.days] }
+      specific_dates  { [ Date.current + 1.day, Date.current + 7.days ] }
     end
 
     trait :even_days do

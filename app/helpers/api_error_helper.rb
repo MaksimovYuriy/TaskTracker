@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ApiErrorHelper
   private
 
@@ -30,6 +32,6 @@ module ApiErrorHelper
   def single_error(status:, code:, detail:, source: nil)
     body = { status: Rack::Utils.status_code(status).to_s, code: code, detail: detail }
     body[:source] = source if source
-    { json: { errors: [body] }, status: status }
+    { json: { errors: [ body ] }, status: status }
   end
 end

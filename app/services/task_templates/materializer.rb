@@ -1,16 +1,14 @@
-module TaskTemplates
-  class Materializer
-    STRATEGY_CLASSES = {
-      "daily"          => "TaskTemplates::Recurrence::DailyStrategy",
-      "monthly"        => "TaskTemplates::Recurrence::MonthlyStrategy",
-      "specific_dates" => "TaskTemplates::Recurrence::SpecificDatesStrategy",
-      "even_days"      => "TaskTemplates::Recurrence::EvenDaysStrategy",
-      "odd_days"       => "TaskTemplates::Recurrence::OddDaysStrategy"
-    }.freeze
+# frozen_string_literal: true
 
-    def self.call(template, range:)
-      new(template, range: range).call
-    end
+module TaskTemplates
+  class Materializer < ApplicationService
+    STRATEGY_CLASSES = {
+      "daily" => "TaskTemplates::Recurrence::DailyStrategy",
+      "monthly" => "TaskTemplates::Recurrence::MonthlyStrategy",
+      "specific_dates" => "TaskTemplates::Recurrence::SpecificDatesStrategy",
+      "even_days" => "TaskTemplates::Recurrence::EvenDaysStrategy",
+      "odd_days" => "TaskTemplates::Recurrence::OddDaysStrategy"
+    }.freeze
 
     def initialize(template, range:)
       @template = template
@@ -32,10 +30,11 @@ module TaskTemplates
       return if duplicate?(scheduled_at)
 
       task = @template.tasks.create!(
-        title:        @template.title,
-        description:  @template.description,
+        title: @template.title,
+        description: @template.description,
         scheduled_at: scheduled_at,
-        status:       :pending
+        status: :pending,
+        user_id: @template.user_id
       )
       copy_tags_to(task)
       task

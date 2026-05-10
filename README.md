@@ -33,35 +33,42 @@ bundle exec rake rswag:specs:swaggerize   # перегенерировать swa
 
 ## Известные ограничения и план развития
 
-### Уникальность `scheduled_at` глобальна, а не per-user
+### `user_id` сейчас — placeholder без модели `User`
 
-В текущей версии на уровне БД и валидации модели `Task` действует **глобальная уникальность** `scheduled_at`:
+В таблицах `tasks` и `task_templates` уже есть колонка `user_id` (`bigint`, nullable, без foreign key). Уникальность `scheduled_at` уже scope-нута по `user_id`:
 
 ```ruby
 # app/models/task.rb
-validates :scheduled_at, uniqueness: true, allow_nil: true
+validates :scheduled_at, presence: true, uniqueness: { scope: :user_id }
 ```
 
 ```sql
-CREATE UNIQUE INDEX index_tasks_on_scheduled_at ON tasks (scheduled_at);
+CREATE UNIQUE INDEX index_tasks_on_user_id_and_scheduled_at ON tasks (user_id, scheduled_at);
 ```
 
-Это сознательная сделка: ограничение **сейчас** защищает от дубликатов задач при повторных POST-запросах на создание серии (например, при двойном клике на «сохранить» на фронте) и от случайных пересечений времени. В однопользовательской системе это работает корректно.
+Сейчас фронт может присылать `user_id` в payload'е (`POST /api/v1/tasks`), а материализатор копирует `user_id` из шаблона в каждую дочернюю задачу. Это **временный механизм-допущение** до появления реальной авторизации.
 
-**При добавлении модели `User` это ограничение нужно scope-нуть по `user_id`**, иначе два разных врача не смогут запланировать задачи на одно и то же время. Конкретные шаги:
+**Что нужно сделать при добавлении модели `User` и аутентификации:**
 
-1. Миграция `AddUserRefToTasks`:
+1. Миграция `AddUsersAndForeignKeys`:
    ```ruby
-   add_reference :tasks, :user, foreign_key: true
-   remove_index :tasks, :scheduled_at, unique: true
-   add_index :tasks, [:user_id, :scheduled_at], unique: true
+   create_table :users do |t|
+     # email, password_digest, name, role и т.п.
+     t.timestamps
+   end
+   change_column_null :tasks,          :user_id, false
+   change_column_null :task_templates, :user_id, false
+   add_foreign_key :tasks,          :users
+   add_foreign_key :task_templates, :users
    ```
-2. Валидация в `Task`:
+2. В моделях `Task` и `TaskTemplate`:
    ```ruby
-   validates :scheduled_at, uniqueness: { scope: :user_id }, allow_nil: true
+   belongs_to :user
+   validates :user_id, presence: true
    ```
-3. Обновить `Materializer.duplicate?` — проверять в рамках пользователя, а не глобально.
-4. В `MonthlyMaterializationJob.cleanup_orphans` тоже учитывать владельца.
+3. В `BaseController` — `before_action :authenticate_user!`, экспозиция `current_user`.
+4. В `TasksController#task_params` — убрать `:user_id` из `permit` (нельзя позволять клиенту подменять владельца) и подставлять `current_user.id` в сервис явно.
+5. В `index` и `show` добавить scope: `Task.where(user_id: current_user.id)`. Аналогично в управлении тегами и материализации.
 
 ### Прочее, что отложено до фичи авторизации
 

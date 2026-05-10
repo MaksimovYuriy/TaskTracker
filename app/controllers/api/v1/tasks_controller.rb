@@ -1,31 +1,30 @@
+# frozen_string_literal: true
+
 module Api
   module V1
     class TasksController < BaseController
       before_action :set_task, only: %i[show update destroy]
 
       def index
-        scope = Task.ransack(params[:q]).result
-                    .includes(:tags).distinct
-                    .order(scheduled_at: :asc, id: :asc)
-        pagy_obj, tasks = pagy(scope)
+        pagy_obj, tasks = pagy(TasksQuery.call(params))
 
-        render json: TaskSerializer.new(tasks, include: [:tags]).serializable_hash.merge(
+        render json: TaskSerializer.new(tasks, include: [ :tags ]).serializable_hash.merge(
           meta: pagination_meta(pagy_obj)
         )
       end
 
       def show
-        render json: TaskSerializer.new(@task, include: [:tags]).serializable_hash
+        render json: TaskSerializer.new(@task, include: [ :tags ]).serializable_hash
       end
 
       def create
         result = Tasks::Creator.call(task_params)
-        render json: TaskSerializer.new(result, include: [:tags]).serializable_hash, status: :created
+        render json: TaskSerializer.new(result, include: [ :tags ]).serializable_hash, status: :created
       end
 
       def update
         @task.update!(update_params)
-        render json: TaskSerializer.new(@task, include: [:tags]).serializable_hash
+        render json: TaskSerializer.new(@task, include: [ :tags ]).serializable_hash
       end
 
       def destroy
@@ -46,7 +45,7 @@ module Api
 
       def task_params
         params.require(:task).permit(
-          :title, :description, :status, :scheduled_at,
+          :title, :description, :status, :scheduled_at, :user_id,
           :recurrence_type, :interval, :day_of_month, :time_of_day, :ends_at,
           specific_dates: [], tag_ids: []
         )
@@ -54,15 +53,6 @@ module Api
 
       def update_params
         params.require(:task).permit(:title, :description, :status, :scheduled_at)
-      end
-
-      def pagination_meta(pagy_obj)
-        {
-          current_page: pagy_obj.page,
-          per_page: pagy_obj.limit,
-          total_pages: pagy_obj.pages,
-          total_count: pagy_obj.count
-        }
       end
     end
   end

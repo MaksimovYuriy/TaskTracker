@@ -1,13 +1,11 @@
+# frozen_string_literal: true
+
 module TaskTemplates
-  class Creator
+  class Creator < ApplicationService
     TEMPLATE_ATTRS = %i[
       title description recurrence_type interval day_of_month
-      specific_dates time_of_day ends_at
+      specific_dates time_of_day ends_at user_id
     ].freeze
-
-    def self.call(params)
-      new(params).call
-    end
 
     def initialize(params)
       @params = params

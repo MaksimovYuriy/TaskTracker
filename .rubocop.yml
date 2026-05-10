@@ -1,0 +1,44 @@
+inherit_gem:
+  rubocop-rails-omakase: rubocop.yml
+
+AllCops:
+  TargetRubyVersion: 3.4
+  NewCops: enable
+  Exclude:
+    - "bin/**/*"
+    - "db/schema.rb"
+    - "vendor/**/*"
+    - "tmp/**/*"
+    - "log/**/*"
+    - "node_modules/**/*"
+
+# Не требуем doc-комментариев — в Rails-проектах их обычно не пишут
+Style/Documentation:
+  Enabled: false
+
+# ApplicationService не определяет initialize, super-вызов в наследниках бессмыслен
+Lint/MissingSuper:
+  Enabled: false
+
+# Спеки и миграции по природе содержат длинные блоки
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*"
+    - "db/migrate/*"
+    - "config/**/*"
+
+Metrics/MethodLength:
+  Exclude:
+    - "db/migrate/*"
+
+# Кириллические описания в Swagger длиннее, чем 120
+Layout/LineLength:
+  Max: 140
+  Exclude:
+    - "spec/swagger_helper.rb"
+    - "spec/requests/**/*"
+
+# FactoryBot DSL с однострочными trait'ами выглядит компактнее с do..end
+Style/BlockDelimiters:
+  Exclude:
+    - "spec/factories/*"

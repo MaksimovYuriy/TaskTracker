@@ -79,7 +79,11 @@ components:
             scheduled_at:
               type: string
               format: date-time
+            user_id:
+              type: integer
               nullable: true
+              description: Идентификатор владельца задачи (placeholder под будущую
+                модель User)
             task_template_id:
               type: string
               nullable: true
@@ -89,6 +93,7 @@ components:
           - description
           - status
           - scheduled_at
+          - user_id
           - task_template_id
         relationships:
           type: object
@@ -136,6 +141,11 @@ components:
               type: string
               format: date-time
               description: Игнорируется, если заданы recurrence-поля
+            user_id:
+              type: integer
+              description: Идентификатор владельца задачи. Опциональное; при появлении
+                модели User станет обязательным и подставляться будет автоматически
+                из current_user
             recurrence_type:
               type: string
               enum:

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'swagger_helper'
 
 RSpec.describe 'api/v1/tasks', type: :request do
@@ -6,13 +8,20 @@ RSpec.describe 'api/v1/tasks', type: :request do
       tags 'Tasks'
       produces 'application/json'
 
-      parameter name: :page,                 in: :query, schema: { type: :integer }, required: false, description: 'Page number'
-      parameter name: :per_page,             in: :query, schema: { type: :integer }, required: false, description: 'Items per page (max 100)'
-      parameter name: :'q[status_eq]',       in: :query, schema: { type: :string, enum: %w[pending done cancelled] }, required: false
-      parameter name: :'q[scheduled_at_gteq]', in: :query, schema: { type: :string, format: 'date-time' }, required: false
-      parameter name: :'q[scheduled_at_lteq]', in: :query, schema: { type: :string, format: 'date-time' }, required: false
-      parameter name: :'q[tags_id_in][]',     in: :query, schema: { type: :array, items: { type: :integer } }, required: false, description: 'Filter by tag ids (OR semantics)'
-      parameter name: :'q[tags_title_in][]',  in: :query, schema: { type: :array, items: { type: :string } },  required: false, description: 'Filter by tag titles (OR semantics)'
+      parameter name: :page,                 in: :query, schema: { type: :integer }, required: false,
+                description: 'Page number'
+      parameter name: :per_page,             in: :query, schema: { type: :integer }, required: false,
+                description: 'Items per page (max 100)'
+      parameter name: :'q[status_eq]',       in: :query, schema: { type: :string, enum: %w[pending done cancelled] },
+                required: false
+      parameter name: :'q[scheduled_at_gteq]', in: :query, schema: { type: :string, format: 'date-time' },
+                required: false
+      parameter name: :'q[scheduled_at_lteq]', in: :query, schema: { type: :string, format: 'date-time' },
+                required: false
+      parameter name: :'q[tags_id_in][]',     in: :query, schema: { type: :array, items: { type: :integer } },
+                required: false, description: 'Filter by tag ids (OR semantics)'
+      parameter name: :'q[tags_title_in][]',  in: :query, schema: { type: :array, items: { type: :string } },
+                required: false, description: 'Filter by tag titles (OR semantics)'
 
       response(200, 'list of tasks') do
         schema '$ref' => '#/components/schemas/TaskCollection'
@@ -85,7 +94,7 @@ RSpec.describe 'api/v1/tasks', type: :request do
                 title: 'Консилиум',
                 description: 'Запланированный осмотр',
                 recurrence_type: 'specific_dates',
-                specific_dates: [(Date.current + 3.days).to_s, (Date.current + 10.days).to_s],
+                specific_dates: [ (Date.current + 3.days).to_s, (Date.current + 10.days).to_s ],
                 time_of_day: '10:30'
               }
             }
@@ -122,9 +131,11 @@ RSpec.describe 'api/v1/tasks', type: :request do
         end
 
         context 'duplicate POST returns empty data (slots already taken)' do
+          let(:shared_user_id) { 9999 }
           before do
-            existing = create(:task_template)
-            create(:task, task_template: existing, scheduled_at: 1.day.from_now.change(hour: 9, min: 0))
+            existing = create(:task_template, user_id: shared_user_id)
+            create(:task, task_template: existing, user_id: shared_user_id,
+                          scheduled_at: 1.day.from_now.change(hour: 9, min: 0))
           end
           let(:task_input) do
             {
@@ -133,7 +144,8 @@ RSpec.describe 'api/v1/tasks', type: :request do
                 description: 'Палаты 201-215',
                 recurrence_type: 'daily',
                 interval: 1,
-                time_of_day: Time.current.tomorrow.change(hour: 9, min: 0).strftime('%H:%M')
+                time_of_day: Time.current.tomorrow.change(hour: 9, min: 0).strftime('%H:%M'),
+                user_id: shared_user_id
               }
             }
           end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateTaskTags < ActiveRecord::Migration[7.1]
   def change
     create_table :task_tags do |t|

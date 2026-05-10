@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class TagSerializer
   include JSONAPI::Serializer
 
@@ -5,7 +7,5 @@ class TagSerializer
 
   attributes :title
 
-  attribute :system do |tag|
-    tag.system?
-  end
+  attribute :system, &:system?
 end

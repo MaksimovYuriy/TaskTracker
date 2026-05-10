@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'swagger_helper'
 
 RSpec.describe 'api/v1/tags', type: :request do
@@ -7,7 +9,8 @@ RSpec.describe 'api/v1/tags', type: :request do
       produces 'application/json'
 
       parameter name: :page,     in: :query, schema: { type: :integer }, required: false, description: 'Page number'
-      parameter name: :per_page, in: :query, schema: { type: :integer }, required: false, description: 'Items per page (max 100)'
+      parameter name: :per_page, in: :query, schema: { type: :integer }, required: false,
+                description: 'Items per page (max 100)'
 
       response(200, 'list of tags') do
         schema '$ref' => '#/components/schemas/TagCollection'

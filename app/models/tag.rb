@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Tag < ApplicationRecord
   SYSTEM_TITLES = %w[отчётность операции звонок].freeze
 

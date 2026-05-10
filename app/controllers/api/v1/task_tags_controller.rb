@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Api
   module V1
     class TaskTagsController < BaseController
@@ -6,7 +8,7 @@ module Api
       def create
         tag = Tag.find(params.require(:tag_id))
         @task.tags << tag unless @task.tags.include?(tag)
-        render json: TaskSerializer.new(@task.reload, include: [:tags]).serializable_hash
+        render json: TaskSerializer.new(@task.reload, include: [ :tags ]).serializable_hash
       end
 
       def destroy

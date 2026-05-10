@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class TaskTemplate < ApplicationRecord
   enum :recurrence_type,
        { daily: 0, monthly: 1, specific_dates: 2, even_days: 3, odd_days: 4 },
