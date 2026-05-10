@@ -8,6 +8,7 @@ class Task < ApplicationRecord
 
   validates :title, presence: true, length: { maximum: 255 }
   validates :description, presence: true, length: { maximum: 5000 }
+  validates :scheduled_at, uniqueness: true, allow_nil: true
 
   scope :scheduled_from, ->(time) { where("scheduled_at >= ?", time) }
   scope :scheduled_to,   ->(time) { where("scheduled_at <= ?", time) }

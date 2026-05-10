@@ -38,6 +38,19 @@ components:
       required:
       - data
       - meta
+    TaskBatch:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            "$ref": "#/components/schemas/TaskResource"
+        included:
+          type: array
+          items:
+            "$ref": "#/components/schemas/TagResource"
+      required:
+      - data
     TaskResource:
       type: object
       properties:
@@ -67,11 +80,16 @@ components:
               type: string
               format: date-time
               nullable: true
+            task_template_id:
+              type: string
+              nullable: true
+              description: ID шаблона, если задача из серии повторений; null для одиночных
           required:
           - title
           - description
           - status
           - scheduled_at
+          - task_template_id
         relationships:
           type: object
           properties:
@@ -96,7 +114,73 @@ components:
       - id
       - type
       - attributes
-    TaskInput:
+    TaskCreateInput:
+      type: object
+      properties:
+        task:
+          type: object
+          properties:
+            title:
+              type: string
+              example: Утренний обход
+            description:
+              type: string
+              example: Палаты 201–215, проверить капельницы
+            status:
+              type: string
+              enum:
+              - pending
+              - done
+              - cancelled
+            scheduled_at:
+              type: string
+              format: date-time
+              description: Игнорируется, если заданы recurrence-поля
+            recurrence_type:
+              type: string
+              enum:
+              - daily
+              - monthly
+              - specific_dates
+              - even_days
+              - odd_days
+              description: Если задано — создаётся серия повторяющихся задач через
+                шаблон
+            interval:
+              type: integer
+              minimum: 1
+              description: Каждый N-й день. Обязательно для recurrence_type=daily
+            day_of_month:
+              type: integer
+              minimum: 1
+              maximum: 31
+              description: День месяца. Обязательно для recurrence_type=monthly
+            specific_dates:
+              type: array
+              items:
+                type: string
+                format: date
+              description: Список дат. Обязательно для recurrence_type=specific_dates
+            time_of_day:
+              type: string
+              example: '09:00'
+              description: Время суток в формате HH:MM. Обязательно для всех recurrence-типов
+            ends_at:
+              type: string
+              format: date
+              description: Дата окончания серии (опционально)
+            tag_ids:
+              type: array
+              items:
+                type: integer
+              description: Привязать теги. Для рекуррентных задач — копируются в каждую
+                материализованную задачу
+          required:
+          - title
+          - description
+      required:
+      - task
+    TaskUpdateInput:
       type: object
       properties:
         task:
@@ -117,9 +201,6 @@ components:
             scheduled_at:
               type: string
               format: date-time
-          required:
-          - title
-          - description
       required:
       - task
     Tag:
@@ -493,11 +574,13 @@ paths:
       parameters: []
       responses:
         '201':
-          description: task created
+          description: single task or recurring series created
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Task"
+                oneOf:
+                - "$ref": "#/components/schemas/Task"
+                - "$ref": "#/components/schemas/TaskBatch"
         '400':
           description: parameter missing
           content:
@@ -514,7 +597,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/TaskInput"
+              "$ref": "#/components/schemas/TaskCreateInput"
   "/api/v1/tasks/{id}":
     parameters:
     - name: id
@@ -574,7 +657,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/TaskInput"
+              "$ref": "#/components/schemas/TaskUpdateInput"
     delete:
       summary: delete task
       tags:
@@ -582,5 +665,25 @@ paths:
       responses:
         '204':
           description: task deleted
+        '404':
+          description: task not found
+  "/api/v1/tasks/{id}/recurrence":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: Task ID
+      schema:
+        type: integer
+    delete:
+      summary: cancel recurring series
+      tags:
+      - Tasks
+      description: 'Отменяет всю серию повторений: помечает шаблон неактивным и удаляет
+        все будущие pending-задачи серии (включая текущую). Идемпотентно — для задачи
+        без серии возвращает 204 без изменений.'
+      responses:
+        '204':
+          description: recurrence cancelled (or task not in series — no-op)
         '404':
           description: task not found

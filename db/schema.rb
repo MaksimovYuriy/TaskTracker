@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_10_074144) do
+ActiveRecord::Schema[7.1].define(version: 2026_05_10_085735) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -60,8 +60,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_10_074144) do
     t.datetime "updated_at", null: false
     t.integer "status", default: 0
     t.bigint "task_template_id"
-    t.index ["scheduled_at"], name: "index_tasks_on_scheduled_at"
-    t.index ["task_template_id", "scheduled_at"], name: "index_tasks_on_template_and_scheduled_at_unique", unique: true, where: "(task_template_id IS NOT NULL)"
+    t.index ["scheduled_at"], name: "index_tasks_on_scheduled_at", unique: true
     t.index ["task_template_id"], name: "index_tasks_on_task_template_id"
   end
 

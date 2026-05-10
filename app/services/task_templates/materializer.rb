@@ -44,7 +44,7 @@ module TaskTemplates
     end
 
     def duplicate?(scheduled_at)
-      @template.tasks.exists?(scheduled_at: scheduled_at)
+      Task.exists?(scheduled_at: scheduled_at)
     end
 
     def copy_tags_to(task)
