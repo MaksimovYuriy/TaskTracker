@@ -25,6 +25,7 @@ gem "rack-cors", "~> 2.0"
 # Background jobs
 gem "sidekiq", "~> 7.3"
 gem "sidekiq-cron", "~> 1.12"
+gem "connection_pool", "~> 2.4"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]

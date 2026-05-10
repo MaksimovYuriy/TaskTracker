@@ -26,21 +26,119 @@ RSpec.describe 'api/v1/tasks', type: :request do
       consumes 'application/json'
       produces 'application/json'
 
-      parameter name: :task_input, in: :body, schema: { '$ref' => '#/components/schemas/TaskInput' }
+      parameter name: :task_input, in: :body, schema: { '$ref' => '#/components/schemas/TaskCreateInput' }
 
-      response(201, 'task created') do
-        schema '$ref' => '#/components/schemas/Task'
-        let(:task_input) do
-          {
-            task: {
-              title: 'Обход пациентов',
-              description: 'Палаты 201–215, проверить капельницы и температуру',
-              status: 'pending',
-              scheduled_at: 1.day.from_now.iso8601
+      response(201, 'single task or recurring series created') do
+        schema oneOf: [
+          { '$ref' => '#/components/schemas/Task' },
+          { '$ref' => '#/components/schemas/TaskBatch' }
+        ]
+
+        context 'single task' do
+          let(:task_input) do
+            {
+              task: {
+                title: 'Обход пациентов',
+                description: 'Палаты 201–215, проверить капельницы и температуру',
+                status: 'pending',
+                scheduled_at: 1.day.from_now.iso8601
+              }
             }
-          }
+          end
+          run_test!
         end
-        run_test!
+
+        context 'daily recurrence' do
+          let(:task_input) do
+            {
+              task: {
+                title: 'Утренний обход',
+                description: 'Каждый день, проверка ИВЛ',
+                recurrence_type: 'daily',
+                interval: 1,
+                time_of_day: '09:00'
+              }
+            }
+          end
+          run_test!
+        end
+
+        context 'monthly recurrence' do
+          let(:task_input) do
+            {
+              task: {
+                title: 'Ежемесячный отчёт',
+                description: 'Сводка за месяц',
+                recurrence_type: 'monthly',
+                day_of_month: 15,
+                time_of_day: '12:00'
+              }
+            }
+          end
+          run_test!
+        end
+
+        context 'specific dates recurrence' do
+          let(:task_input) do
+            {
+              task: {
+                title: 'Консилиум',
+                description: 'Запланированный осмотр',
+                recurrence_type: 'specific_dates',
+                specific_dates: [(Date.current + 3.days).to_s, (Date.current + 10.days).to_s],
+                time_of_day: '10:30'
+              }
+            }
+          end
+          run_test!
+        end
+
+        context 'even days recurrence' do
+          let(:task_input) do
+            {
+              task: {
+                title: 'Зарядка пациентов',
+                description: 'Лечебная физкультура',
+                recurrence_type: 'even_days',
+                time_of_day: '08:00'
+              }
+            }
+          end
+          run_test!
+        end
+
+        context 'odd days recurrence' do
+          let(:task_input) do
+            {
+              task: {
+                title: 'Перевязки',
+                description: 'Палаты 301-310',
+                recurrence_type: 'odd_days',
+                time_of_day: '11:00'
+              }
+            }
+          end
+          run_test!
+        end
+
+        context 'duplicate POST returns empty data (slots already taken)' do
+          before do
+            existing = create(:task_template)
+            create(:task, task_template: existing, scheduled_at: 1.day.from_now.change(hour: 9, min: 0))
+          end
+          let(:task_input) do
+            {
+              task: {
+                title: 'Утренний обход',
+                description: 'Палаты 201-215',
+                recurrence_type: 'daily',
+                interval: 1,
+                time_of_day: Time.current.tomorrow.change(hour: 9, min: 0).strftime('%H:%M')
+              }
+            }
+          end
+          run_test!
+        end
       end
 
       response(400, 'parameter missing') do
@@ -51,8 +149,25 @@ RSpec.describe 'api/v1/tasks', type: :request do
 
       response(422, 'validation error') do
         schema '$ref' => '#/components/schemas/Error'
-        let(:task_input) { { task: { title: '', description: '', status: 'pending' } } }
-        run_test!
+
+        context 'empty title and description' do
+          let(:task_input) { { task: { title: '', description: '', status: 'pending' } } }
+          run_test!
+        end
+
+        context 'daily recurrence without interval' do
+          let(:task_input) do
+            {
+              task: {
+                title: 'Битый шаблон',
+                description: '...',
+                recurrence_type: 'daily',
+                time_of_day: '09:00'
+              }
+            }
+          end
+          run_test!
+        end
       end
     end
   end
@@ -82,7 +197,7 @@ RSpec.describe 'api/v1/tasks', type: :request do
       consumes 'application/json'
       produces 'application/json'
 
-      parameter name: :task_input, in: :body, schema: { '$ref' => '#/components/schemas/TaskInput' }
+      parameter name: :task_input, in: :body, schema: { '$ref' => '#/components/schemas/TaskUpdateInput' }
 
       response(200, 'task updated') do
         schema '$ref' => '#/components/schemas/Task'
@@ -119,6 +234,36 @@ RSpec.describe 'api/v1/tasks', type: :request do
       response(204, 'task deleted') do
         let(:id) { create(:task).id }
         run_test!
+      end
+
+      response(404, 'task not found') do
+        schema '$ref' => '#/components/schemas/Error'
+        let(:id) { 0 }
+        run_test!
+      end
+    end
+  end
+
+  path '/api/v1/tasks/{id}/recurrence' do
+    parameter name: :id, in: :path, type: :integer, required: true, description: 'Task ID'
+
+    delete('cancel recurring series') do
+      tags 'Tasks'
+      description 'Отменяет всю серию повторений: помечает шаблон неактивным и удаляет все будущие pending-задачи серии (включая текущую). Идемпотентно — для задачи без серии возвращает 204 без изменений.'
+
+      response(204, 'recurrence cancelled (or task not in series — no-op)') do
+        context 'task is part of a recurring series' do
+          let(:id) do
+            template = create(:task_template)
+            create(:task, task_template: template, scheduled_at: 1.day.from_now).id
+          end
+          run_test!
+        end
+
+        context 'task is not part of any series (idempotent no-op)' do
+          let(:id) { create(:task).id }
+          run_test!
+        end
       end
 
       response(404, 'task not found') do

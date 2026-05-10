@@ -14,7 +14,7 @@ module Tasks
       if recurring?
         TaskTemplates::Creator.call(@params)
       else
-        [Task.create!(@params.slice(*SINGLE_TASK_ATTRS))]
+        Task.create!(@params.slice(*SINGLE_TASK_ATTRS))
       end
     end
 

@@ -1,5 +1,11 @@
 require "sidekiq/web"
 require "sidekiq/cron/web"
+require "rack/session/cookie"
+
+Sidekiq::Web.use Rack::Session::Cookie,
+                 secret: Rails.application.secret_key_base,
+                 same_site: :lax,
+                 max_age: 86_400
 
 Rails.application.routes.draw do
   mount Rswag::Ui::Engine => '/api-docs'
@@ -15,6 +21,9 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :tasks, only: %i[index show create update destroy] do
+        member do
+          delete :recurrence, action: :cancel_recurrence
+        end
         resources :tags, only: %i[create destroy], controller: 'task_tags'
       end
       resources :tags, only: %i[index show create update destroy]

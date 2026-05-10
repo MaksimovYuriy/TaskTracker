@@ -1,13 +1,40 @@
 FactoryBot.define do
   factory :task_template do
-    title { "MyString" }
-    description { "MyText" }
-    recurrence_type { 1 }
-    interval { 1 }
-    day_of_month { 1 }
-    sepcific_dates { "2026-05-10" }
-    time_of_day { "2026-05-10 10:36:41" }
-    ends_at { "2026-05-10" }
-    active { false }
+    sequence(:title) { |n| "Template ##{n} - #{Faker::Lorem.sentence(word_count: 3)}" }
+    description      { Faker::Lorem.paragraph(sentence_count: 3) }
+    recurrence_type  { :daily }
+    interval         { 1 }
+    time_of_day      { "09:00" }
+    active           { true }
+
+    trait :monthly do
+      recurrence_type { :monthly }
+      interval        { nil }
+      day_of_month    { 15 }
+    end
+
+    trait :specific_dates do
+      recurrence_type { :specific_dates }
+      interval        { nil }
+      specific_dates  { [Date.current + 1.day, Date.current + 7.days] }
+    end
+
+    trait :even_days do
+      recurrence_type { :even_days }
+      interval        { nil }
+    end
+
+    trait :odd_days do
+      recurrence_type { :odd_days }
+      interval        { nil }
+    end
+
+    trait :with_ends_at do
+      ends_at { Date.current + 30.days }
+    end
+
+    trait :cancelled do
+      active { false }
+    end
   end
 end

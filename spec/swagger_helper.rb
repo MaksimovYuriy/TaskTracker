@@ -49,6 +49,20 @@ RSpec.configure do |config|
             },
             required: %w[data meta]
           },
+          TaskBatch: {
+            type: :object,
+            properties: {
+              data: {
+                type: :array,
+                items: { '$ref' => '#/components/schemas/TaskResource' }
+              },
+              included: {
+                type: :array,
+                items: { '$ref' => '#/components/schemas/TagResource' }
+              }
+            },
+            required: %w[data]
+          },
           TaskResource: {
             type: :object,
             properties: {
@@ -60,9 +74,10 @@ RSpec.configure do |config|
                   title: { type: :string, example: 'Обход пациентов' },
                   description: { type: :string, example: 'Палаты 201–215, проверить капельницы' },
                   status: { type: :string, enum: %w[pending done cancelled] },
-                  scheduled_at: { type: :string, format: 'date-time', nullable: true }
+                  scheduled_at: { type: :string, format: 'date-time', nullable: true },
+                  task_template_id: { type: :string, nullable: true, description: 'ID шаблона, если задача из серии повторений; null для одиночных' }
                 },
-                required: %w[title description status scheduled_at]
+                required: %w[title description status scheduled_at task_template_id]
               },
               relationships: {
                 type: :object,
@@ -88,7 +103,38 @@ RSpec.configure do |config|
             },
             required: %w[id type attributes]
           },
-          TaskInput: {
+          TaskCreateInput: {
+            type: :object,
+            properties: {
+              task: {
+                type: :object,
+                properties: {
+                  title: { type: :string, example: 'Утренний обход' },
+                  description: { type: :string, example: 'Палаты 201–215, проверить капельницы' },
+                  status: { type: :string, enum: %w[pending done cancelled] },
+                  scheduled_at: { type: :string, format: 'date-time', description: 'Игнорируется, если заданы recurrence-поля' },
+                  recurrence_type: {
+                    type: :string,
+                    enum: %w[daily monthly specific_dates even_days odd_days],
+                    description: 'Если задано — создаётся серия повторяющихся задач через шаблон'
+                  },
+                  interval: { type: :integer, minimum: 1, description: 'Каждый N-й день. Обязательно для recurrence_type=daily' },
+                  day_of_month: { type: :integer, minimum: 1, maximum: 31, description: 'День месяца. Обязательно для recurrence_type=monthly' },
+                  specific_dates: {
+                    type: :array,
+                    items: { type: :string, format: 'date' },
+                    description: 'Список дат. Обязательно для recurrence_type=specific_dates'
+                  },
+                  time_of_day: { type: :string, example: '09:00', description: 'Время суток в формате HH:MM. Обязательно для всех recurrence-типов' },
+                  ends_at: { type: :string, format: 'date', description: 'Дата окончания серии (опционально)' },
+                  tag_ids: { type: :array, items: { type: :integer }, description: 'Привязать теги. Для рекуррентных задач — копируются в каждую материализованную задачу' }
+                },
+                required: %w[title description]
+              }
+            },
+            required: %w[task]
+          },
+          TaskUpdateInput: {
             type: :object,
             properties: {
               task: {
@@ -98,8 +144,7 @@ RSpec.configure do |config|
                   description: { type: :string, example: 'Палаты 201–215, проверить капельницы' },
                   status: { type: :string, enum: %w[pending done cancelled] },
                   scheduled_at: { type: :string, format: 'date-time' }
-                },
-                required: %w[title description]
+                }
               }
             },
             required: %w[task]
